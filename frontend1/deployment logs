@@ -1,0 +1,144 @@
+import React, { useState } from 'react';
+import { useGetDeploymentLogs } from '../hooks/useQueries';
+import { History, User, Hash, Calendar, ExternalLink, Search } from 'lucide-react';
+
+export default function DeploymentLogs() {
+  const { data: logs, isLoading, error } = useGetDeploymentLogs();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredLogs = logs?.filter(log => 
+    log.canisterId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.wasmHash.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.userPrincipal.toString().toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const formatTimestamp = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1000000);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    
+    return date.toLocaleDateString();
+  };
+
+  const truncateHash = (hash: string) => {
+    return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
+  };
+
+  const truncatePrincipal = (principal: string) => {
+    return `${principal.slice(0, 8)}...${principal.slice(-8)}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-800 rounded-lg p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <History className="w-6 h-6 text-blue-400" />
+          <h2 className="text-xl font-semibold text-white">Deployment Logs</h2>
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
+          <p className="text-gray-400 mt-2">Loading deployment logs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-800 rounded-lg p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <History className="w-6 h-6 text-blue-400" />
+          <h2 className="text-xl font-semibold text-white">Deployment Logs</h2>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-red-400">Failed to load deployment logs</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-gray-800 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <History className="w-6 h-6 text-blue-400" />
+            <h2 className="text-xl font-semibold text-white">Deployment Logs</h2>
+            <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
+              {filteredLogs.length} deployments
+            </span>
+          </div>
+          
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search deployments..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        {filteredLogs.length === 0 ? (
+          <div className="text-center py-8">
+            <History className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">
+              {searchTerm ? 'No deployments match your search' : 'No deployments yet'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredLogs.map((log, index) => (
+              <div key={index} className="bg-gray-700 rounded-lg p-4 hover:bg-gray-650 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <ExternalLink className="w-4 h-4 text-blue-400" />
+                        <code className="text-blue-300 font-mono text-sm bg-gray-800 px-2 py-1 rounded">
+                          {log.canisterId}
+                        </code>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4 text-sm text-gray-400">
+                      <div className="flex items-center space-x-1">
+                        <User className="w-3 h-3" />
+                        <span>{truncatePrincipal(log.userPrincipal.toString())}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Hash className="w-3 h-3" />
+                        <span>{truncateHash(log.wasmHash)}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>{formatTimestamp(log.timestamp)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => window.open(`https://${log.canisterId}.ic0.app`, '_blank')}
+                    className="ml-4 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                  >
+                    Visit
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
