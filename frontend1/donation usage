@@ -1,0 +1,177 @@
+import React from 'react';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useGetDonationUsageBreakdown } from '../hooks/useQueries';
+import WithdrawalButton from './WithdrawalButton';
+import { TrendingUp, DollarSign, Zap, Minus, PieChart } from 'lucide-react';
+
+const CONTROLLER_PRINCIPAL = 'ogfch-ufc3n-wie7u-j3i7t-hcpad-pua6y-k2ejb-eopnu-fje3c-gz4jq-7qe';
+
+export default function DonationUsageBreakdown() {
+  const { identity } = useInternetIdentity();
+  const { data: breakdown, isLoading, error } = useGetDonationUsageBreakdown();
+
+  const isController = identity?.getPrincipal().toString() === CONTROLLER_PRINCIPAL;
+
+  const formatAmount = (amount: bigint, type: 'icp' | 'cycles') => {
+    const numAmount = Number(amount);
+    if (type === 'icp') {
+      return (numAmount / 100000000).toFixed(4);
+    } else {
+      return (numAmount / 1000000000000).toFixed(2);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-800 rounded-lg p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <PieChart className="w-6 h-6 text-green-400" />
+          <h2 className="text-xl font-semibold text-white">Donation Usage Breakdown</h2>
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto"></div>
+          <p className="text-gray-400 mt-2">Loading donation breakdown...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-800 rounded-lg p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <PieChart className="w-6 h-6 text-green-400" />
+          <h2 className="text-xl font-semibold text-white">Donation Usage Breakdown</h2>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-red-400">Failed to load donation breakdown</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!breakdown) {
+    return null;
+  }
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <PieChart className="w-6 h-6 text-green-400" />
+          <h2 className="text-xl font-semibold text-white">Donation Usage Breakdown</h2>
+        </div>
+        {isController && <WithdrawalButton />}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* ICP Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-white flex items-center space-x-2">
+            <DollarSign className="w-5 h-5 text-yellow-400" />
+            <span>ICP Finances</span>
+          </h3>
+          
+          <div className="space-y-3">
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <span className="text-gray-300">Total Received</span>
+                </div>
+                <span className="text-green-400 font-semibold">
+                  {formatAmount(breakdown.totalIcpDonations, 'icp')} ICP
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Minus className="w-4 h-4 text-red-400" />
+                  <span className="text-gray-300">Amount Spent</span>
+                </div>
+                <span className="text-red-400 font-semibold">
+                  {formatAmount(breakdown.amountSpent, 'icp')} ICP
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-4 border-2 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-4 h-4 text-blue-400" />
+                  <span className="text-gray-300 font-medium">Remaining Balance</span>
+                </div>
+                <span className="text-blue-400 font-bold text-lg">
+                  {formatAmount(breakdown.remainingIcpBalance, 'icp')} ICP
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Cycles Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-white flex items-center space-x-2">
+            <Zap className="w-5 h-5 text-blue-400" />
+            <span>Cycles Finances</span>
+          </h3>
+          
+          <div className="space-y-3">
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <span className="text-gray-300">Total Received</span>
+                </div>
+                <span className="text-green-400 font-semibold">
+                  {formatAmount(breakdown.totalCycleDonations, 'cycles')}T
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Minus className="w-4 h-4 text-red-400" />
+                  <span className="text-gray-300">Amount Spent</span>
+                </div>
+                <span className="text-red-400 font-semibold">
+                  {formatAmount(breakdown.amountSpent, 'cycles')}T
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-4 border-2 border-purple-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Zap className="w-4 h-4 text-purple-400" />
+                  <span className="text-gray-300 font-medium">Remaining Balance</span>
+                </div>
+                <span className="text-purple-400 font-bold text-lg">
+                  {formatAmount(breakdown.remainingCycleBalance, 'cycles')}T
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Transparency Note */}
+      <div className="mt-6 p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
+        <div className="flex items-start space-x-3">
+          <PieChart className="w-5 h-5 text-blue-400 mt-0.5" />
+          <div>
+            <h4 className="font-medium text-blue-300 mb-1">Financial Transparency</h4>
+            <p className="text-blue-200 text-sm">
+              This breakdown shows exactly how community donations are being used to support the Espresso platform. 
+              Spent amounts include deployment costs, infrastructure maintenance, and platform operations.
+              {isController && ' As the controller, you can withdraw available ICP funds using the withdrawal button above.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
