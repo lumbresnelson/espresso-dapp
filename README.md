@@ -1,7 +1,8 @@
 # espresso-dapp
 Espresso revolutionizes dApp deployment on the Internet Computer by making it accessible, transparent, and community-driven. Deploy your applications with confidence and join a thriving ecosystem of developers.
 
-Espresso – One-Click dApp Deployment for the Internet Computer
+Espresso – One-Click dApp Deployment for the Internet Computer.
+
 Espresso is a user-friendly, on-chain tool for one-click deployment of dApps on the Internet Computer. It features a simple UI, Wasm validation, public deployment logs, initial cycle funding, and a donation system to support ongoing operations.
 
 Features
