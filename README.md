@@ -7,32 +7,32 @@ Espresso is a user-friendly, on-chain tool for one-click deployment of dApps on 
 
 Features
 
-One-click deployment of dApps (input a canister ID or upload Wasm)
+- One-click deployment of dApps (input a canister ID or upload Wasm)
 
-Public, on-chain deployment logs
+- Public, on-chain deployment logs
 
-Initial cycle funding for new canisters
+- Initial cycle funding for new canisters
 
-Donation system (ICP and cycles)
+- Donation system (ICP and cycles)
 
-Example template: Decentralized Link Shortener
+- Example template: Decentralized Link Shortener
 
 Getting Started
 
-Clone this repository.
+- Clone this repository.
 
-See the backend/ folder for Motoko canister code.
+- See the backend/ folder for Motoko canister code.
 
-See the frontend/ folder for the React/TypeScript UI.
+- See the frontend/ folder for the React/TypeScript UI.
 
-Follow the Internet Computer and Caffeine documentation to deploy.
+- Follow the Internet Computer and Caffeine documentation to deploy.
 
 How to Use
 
-Enter a canister ID or upload a Wasm file in the UI.
+- Enter a canister ID or upload a Wasm file in the UI.
 
-Click "Deploy" to create your dApp.
+- Click "Deploy" to create your dApp.
 
-View all deployments in the public log.
+- View all deployments in the public log.
 
-Support the project with a donation if you wish!
+- Support the project with a donation if you wish!
