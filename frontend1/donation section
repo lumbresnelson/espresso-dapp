@@ -1,0 +1,245 @@
+import React, { useState } from 'react';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useGetIcpDonations, useGetCycleDonations, useRecordIcpDonation, useRecordCycleDonation, useGetCycleBalance } from '../hooks/useQueries';
+import { Heart, Coins, Zap, Users, TrendingUp, Loader2 } from 'lucide-react';
+
+export default function DonationSection() {
+  const { identity } = useInternetIdentity();
+  const [donationType, setDonationType] = useState<'icp' | 'cycles'>('icp');
+  const [amount, setAmount] = useState('');
+
+  const { data: icpDonations } = useGetIcpDonations();
+  const { data: cycleDonations } = useGetCycleDonations();
+  const { data: cycleBalance } = useGetCycleBalance();
+  const recordIcpDonation = useRecordIcpDonation();
+  const recordCycleDonation = useRecordCycleDonation();
+
+  const isAuthenticated = !!identity;
+
+  const handleDonate = async () => {
+    if (!isAuthenticated || !amount) return;
+
+    const donationAmount = BigInt(Math.floor(parseFloat(amount) * 100000000)); // Convert to e8s
+
+    try {
+      if (donationType === 'icp') {
+        await recordIcpDonation.mutateAsync(donationAmount);
+      } else {
+        await recordCycleDonation.mutateAsync(donationAmount);
+      }
+      setAmount('');
+    } catch (error) {
+      console.error('Donation error:', error);
+    }
+  };
+
+  const totalIcpDonations = icpDonations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+  const totalCycleDonations = cycleDonations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+  const totalDonors = new Set([
+    ...(icpDonations?.map(d => d.donorPrincipal.toString()) || []),
+    ...(cycleDonations?.map(d => d.donorPrincipal.toString()) || [])
+  ]).size;
+
+  const formatAmount = (amount: number, type: 'icp' | 'cycles') => {
+    if (type === 'icp') {
+      return (amount / 100000000).toFixed(4);
+    } else {
+      return (amount / 1000000000000).toFixed(2);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg p-8 text-center">
+        <Heart className="w-12 h-12 text-red-400 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">Support Espresso</h2>
+        <p className="text-gray-300 max-w-2xl mx-auto">
+          Help us maintain and improve the Espresso platform. Your donations support infrastructure costs,
+          development, and provide cycles for new deployments.
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gray-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Coins className="w-5 h-5 text-yellow-400" />
+            <span className="text-gray-400 text-sm">Total ICP Donated</span>
+          </div>
+          <div className="text-xl font-bold text-white">
+            {formatAmount(totalIcpDonations, 'icp')} ICP
+          </div>
+        </div>
+
+        <div className="bg-gray-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Zap className="w-5 h-5 text-blue-400" />
+            <span className="text-gray-400 text-sm">Total Cycles Donated</span>
+          </div>
+          <div className="text-xl font-bold text-white">
+            {formatAmount(totalCycleDonations, 'cycles')}T
+          </div>
+        </div>
+
+        <div className="bg-gray-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Users className="w-5 h-5 text-green-400" />
+            <span className="text-gray-400 text-sm">Total Donors</span>
+          </div>
+          <div className="text-xl font-bold text-white">{totalDonors}</div>
+        </div>
+
+        <div className="bg-gray-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <TrendingUp className="w-5 h-5 text-purple-400" />
+            <span className="text-gray-400 text-sm">Cycle Balance</span>
+          </div>
+          <div className="text-xl font-bold text-white">
+            {cycleBalance ? formatAmount(Number(cycleBalance), 'cycles') : '0'}T
+          </div>
+        </div>
+      </div>
+
+      {/* Donation Form */}
+      <div className="bg-gray-800 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Make a Donation</h3>
+
+        {!isAuthenticated && (
+          <div className="mb-6 p-4 bg-yellow-900 border border-yellow-700 rounded-lg">
+            <p className="text-yellow-200">Please login to make a donation</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Donation Type Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Donation Type
+            </label>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setDonationType('icp')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  donationType === 'icp'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                <Coins className="w-4 h-4" />
+                <span>ICP</span>
+              </button>
+              <button
+                onClick={() => setDonationType('cycles')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  donationType === 'cycles'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                <Zap className="w-4 h-4" />
+                <span>Cycles</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Amount Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Amount ({donationType === 'icp' ? 'ICP' : 'Trillion Cycles'})
+            </label>
+            <input
+              type="number"
+              step="0.0001"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder={`Enter ${donationType === 'icp' ? 'ICP' : 'cycles'} amount`}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={!isAuthenticated}
+            />
+          </div>
+
+          {/* Donate Button */}
+          <button
+            onClick={handleDonate}
+            disabled={!isAuthenticated || !amount || recordIcpDonation.isPending || recordCycleDonation.isPending}
+            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-2 px-6 rounded-lg transition-colors"
+          >
+            {(recordIcpDonation.isPending || recordCycleDonation.isPending) ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Heart className="w-4 h-4" />
+            )}
+            <span>
+              {(recordIcpDonation.isPending || recordCycleDonation.isPending) 
+                ? 'Processing...' 
+                : `Donate ${donationType.toUpperCase()}`
+              }
+            </span>
+          </button>
+        </div>
+
+        {/* Success Messages */}
+        {recordIcpDonation.isSuccess && (
+          <div className="mt-4 p-3 bg-green-900 border border-green-700 rounded-lg">
+            <p className="text-green-200">Thank you for your ICP donation!</p>
+          </div>
+        )}
+
+        {recordCycleDonation.isSuccess && (
+          <div className="mt-4 p-3 bg-green-900 border border-green-700 rounded-lg">
+            <p className="text-green-200">Thank you for your cycles donation!</p>
+          </div>
+        )}
+      </div>
+
+      {/* How Donations Help */}
+      <div className="bg-gray-800 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">How Your Donations Help</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div className="flex items-start space-x-3">
+              <Zap className="w-5 h-5 text-blue-400 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-white">Infrastructure Costs</h4>
+                <p className="text-gray-400 text-sm">
+                  Cycles are used to power the Espresso platform and provide initial funding for new deployments.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <TrendingUp className="w-5 h-5 text-green-400 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-white">Platform Development</h4>
+                <p className="text-gray-400 text-sm">
+                  ICP donations support ongoing development and new features for the platform.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-start space-x-3">
+              <Users className="w-5 h-5 text-purple-400 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-white">Community Support</h4>
+                <p className="text-gray-400 text-sm">
+                  Help us provide free deployment services to developers and maintain the platform.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <Heart className="w-5 h-5 text-red-400 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-white">Open Source</h4>
+                <p className="text-gray-400 text-sm">
+                  All donations help keep Espresso free and open source for the entire IC community.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
